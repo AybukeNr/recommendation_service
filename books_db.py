@@ -1,20 +1,36 @@
 import psycopg2
+from psycopg2.extras import RealDictCursor
 
-def connect_db():
-    return psycopg2.connect(
-        host="localhost",
-        dbname="BooksDB",
-        user="postgres",
-        password="root",
-        port=5432
-    )
+DB_CONFIG = {
+    "host": "localhost",
+    "port": 5432,
+    "database": "BooksDB",
+    "user": "postgres",
+    "password": "root"
+}
 
-def get_descriptions_by_ids(book_ids):
-    conn = connect_db()
-    cursor = conn.cursor()
-    placeholders = ','.join(['%s'] * len(book_ids))
-    query = f"SELECT id, description FROM book WHERE id IN ({placeholders})"
-    cursor.execute(query, tuple(book_ids))
-    results = cursor.fetchall()
+# Eşleşen kitapların açıklamalarını dbden al
+def get_recommended_books():
+    conn = psycopg2.connect(**DB_CONFIG)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+    
+    query = "SELECT id, description FROM book WHERE description IS NOT NULL"
+    cursor.execute(query)
+    books = cursor.fetchall()
+
+    cursor.close()
     conn.close()
-    return results  
+    return books
+
+# Ziyaret edilen kitapların açıklamalarını dbden al
+def get_visited_books_by_ids(book_ids):
+    conn = psycopg2.connect(**DB_CONFIG)
+    cursor = conn.cursor(cursor_factory=RealDictCursor)
+
+    sql = "SELECT id, description FROM books WHERE id = ANY(%s) AND description IS NOT NULL"
+    cursor.execute(sql, (book_ids,))
+    books = cursor.fetchall()
+
+    cursor.close()
+    conn.close()
+    return books

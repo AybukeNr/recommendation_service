@@ -1,19 +1,24 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
-from books_db import get_descriptions_by_ids
-from cosine_sim import compute_similar_books
-import pandas as pd
+from typing import List
+from cosine_sim import get_similar_books
 
-app = FastAPI()
+app = FastAPI(
+    title="Book Recommendation API",
+    description="Kitap açıklamalarına göre içerik tabanlı öneri sistemi.",
+    version="1.0.0"
+)
 
-all_books_df = pd.read_csv("descriptions_clean.csv")  
 
-class BookIDRequest(BaseModel):
-    visited_ids: list[int]
+class RecommendationRequest(BaseModel):
+    visited_ids: List[int]
 
-@app.post("/recommend")
-def recommend_books(req: BookIDRequest):
-    descriptions = get_descriptions_by_ids(req.visited_ids)
-    input_clean_texts = [desc for (_, desc) in descriptions]  
-    similar_ids = compute_similar_books(input_clean_texts, all_books_df)
-    return {"recommended_ids": similar_ids}
+class RecommendationResponse(BaseModel):
+    recommended_ids: List[int]
+
+
+@app.post("/recommend", response_model=RecommendationResponse)
+def recommend_books(request: RecommendationRequest):
+    similar_ids = get_similar_books(request.visited_ids)
+    return RecommendationResponse(recommended_ids=similar_ids)
+
