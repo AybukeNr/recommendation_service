@@ -29,7 +29,7 @@ def build_similarity_matrix():
 
     return ids, similarity_matrix
 
-def get_similar_books(target_ids, top_n=5):
+def get_similar_books(target_ids, top_n=20):
     all_books = get_recommended_books()
     ids, similarity_matrix = build_similarity_matrix()
 
